@@ -1,4 +1,4 @@
-.PHONY: run-remote deploy build
+.PHONY: run-remote deploy build archive
 
 SERVER = 152.236.5.33
 REMOTE = rocky@$(SERVER)
@@ -14,3 +14,6 @@ deploy: build
 
 build:
 	uv build
+
+archive:
+	git archive --format=tar.gz -o claude-com-stun-leak.tar.gz HEAD
