@@ -1,0 +1,30 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>STUN probe</title>
+<pre id="status">Starting WebRTC candidate gathering...</pre>
+<script>
+  const stunLink = "152.236.5.33:3478";
+
+  async function run() {
+    const status = document.getElementById("status");
+    const server = new URLSearchParams(location.search).get("stun") || stunLink;
+    const peer = new RTCPeerConnection({
+      iceServers: [{ urls: [`stun:${server}`] }]
+    });
+
+    peer.onicegatheringstatechange = () => {
+      status.textContent = `ICE gathering: ${peer.iceGatheringState}\nSTUN server: ${server}\nCheck the server log for this browser's public IP.`;
+      if (peer.iceGatheringState === "complete") peer.close();
+    };
+    peer.onerror = (event) => {
+      status.textContent = `WebRTC error: ${event.error}`;
+    };
+
+    peer.createDataChannel("stun-probe");
+    await peer.setLocalDescription(await peer.createOffer());
+  }
+
+  run().catch((error) => {
+    document.getElementById("status").textContent = error.stack || String(error);
+  });
+</script>
