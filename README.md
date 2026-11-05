@@ -35,7 +35,9 @@ protect your users against these kinds of attacks.
 
 ### Proof
 
-This email includes a minimal `.tar.gz` reproducing the attack. The following files are relevant:
+This email includes a minimal `.tar.gz` reproducing the attack. We also have a private github repo
+we are happy to share with you, with the exact same information, if that is more convenient. The
+following files are relevant:
 
 - `stun_server.py` includes a minimal vibe-coded STUN server, which the attacker hosts on their
   server.
