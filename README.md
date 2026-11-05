@@ -1,3 +1,5 @@
+## Summary
+
 Hi Anthropic,
 
 My name is Marko, and I'm one of the engineers working at https://atuin.sh. This email is to notify
@@ -33,7 +35,7 @@ attacker needs to inject an `iframe` within the artifact, creating a new context
 Consequently, since it appears you have some mitigations in place, I suspect that you aim to
 protect your users against these kinds of attacks.
 
-### Proof
+## Steps to reproduce
 
 This email includes a minimal `.tar.gz` reproducing the attack. We also have a private github repo
 we are happy to share with you, with the exact same information, if that is more convenient. The
@@ -51,7 +53,7 @@ following files are relevant:
       inside the browser's context.
     * Run the `RTCPeerConnection` within a dynamically created `iframe`.
 
-  In all of these cases, the IP of the victim will be sent to the server. The `stun_server.py` will
+  In the last two cases, the IP of the victim will be sent to the server. The `stun_server.py` will
   echo back the IP address, for convenience.
 
 Additional files, which are helpful to reproduce the issue:
@@ -78,7 +80,7 @@ with SSH access to this box as we have provisioned it for this purpose alone.
 The naive solution is to parse the document for `iframe`s, but that is difficult, bug-prone, and
 potentially still insecure, as a malicious attacker could simply "un-patch" `RTCPeerConnection`, if
 lower-level, undocumented browser APIs exist at this point, or at any point in the future. Worse
-yet, someone can just `document.addElement('iframe')` and call it a day.
+yet, someone can just `document.createElement('iframe')` and call it a day.
 
 The proposed solution is more involved, however, appears to be total. At Atuin, we are currently
 exploring the latter option for our own secure application. We would be more than happy to share
