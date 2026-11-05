@@ -1,0 +1,139 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sandbox Probe</title>
+<style>
+  :root { --paper: #ffffff; --ink: #14202a; --muted: #4f5e6b; --line: #c6d0d8; --accent: #2441c4; --on-accent: #ffffff; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --paper: #0e151b; --ink: #e4ebf0; --muted: #93a3b1; --line: #2b3844; --accent: #8aa0ff; --on-accent: #0e151b; }
+  }
+  :root[data-theme="dark"] { --paper: #0e151b; --ink: #e4ebf0; --muted: #93a3b1; --line: #2b3844; --accent: #8aa0ff; --on-accent: #0e151b; }
+  body { margin: 0; padding: 24px 16px; background: var(--paper); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 760px; margin-inline: auto; display: grid; gap: 16px; }
+  h1 { font-size: 24px; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  label { display: grid; gap: 4px; font-weight: 500; }
+  input { padding: 8px 10px; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font: 14px ui-monospace, Menlo, monospace; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { padding: 10px 16px; background: var(--accent); color: var(--on-accent); border: 0; border-radius: 6px; font: 500 15px system-ui, sans-serif; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: progress; }
+  .table { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font: 13px ui-monospace, Menlo, monospace; }
+  th, td { padding: 8px 12px 8px 0; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; }
+  iframe { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sandbox Probe</h1>
+  <p>Each button sends one STUN request from a different place and shows the public address the server reports, to compare with the server's own log. Nothing is sent until you press one.</p>
+  <label>STUN server <input id="server" value="152.236.5.33:3478" spellcheck="false" autocomplete="off"></label>
+  <div class="buttons">
+    <button id="page" type="button">1. This page</button>
+    <button id="blank" type="button">2. Empty iframe</button>
+    <button id="sandboxed" type="button">3. Sandboxed srcdoc iframe</button>
+  </div>
+  <div class="table">
+    <table>
+      <thead><tr><th>Time (UTC)</th><th>Test</th><th>Result</th></tr></thead>
+      <tbody id="log"></tbody>
+    </table>
+  </div>
+</main>
+<script>
+  const GATHER_TIMEOUT_MS = 6000
+
+  function gather(Ctor, server, timeoutMs) {
+    return new Promise((resolve) => {
+      const found = []
+      const pc = new Ctor({ iceServers: [{ urls: `stun:${server}` }] })
+      const done = () => { clearTimeout(timer); pc.close(); resolve(found) }
+      const timer = setTimeout(done, timeoutMs)
+      pc.onicecandidate = (e) => {
+        if (!e.candidate) return done()
+        if (e.candidate.type !== 'srflx') return
+        const parts = e.candidate.candidate.split(' ')
+        found.push(`${parts[4]}:${parts[5]}`)
+      }
+      pc.createDataChannel('x')
+      pc.createOffer().then((o) => pc.setLocalDescription(o)).catch((err) => { found.push(`error ${err.name}`); done() })
+    })
+  }
+
+  const describe = (found) => found.length > 0 ? `server reports ${found.join(', ')}` : 'no reply from the server'
+
+  const TESTS = {
+    page: {
+      label: 'This page',
+      run: async (server) => typeof RTCPeerConnection === 'function'
+        ? describe(await gather(RTCPeerConnection, server, GATHER_TIMEOUT_MS))
+        : `RTCPeerConnection is ${typeof RTCPeerConnection}, nothing sent`,
+    },
+    blank: {
+      label: 'Empty iframe',
+      run: async (server) => {
+        const frame = document.createElement('iframe')
+        document.body.append(frame)
+        const Ctor = frame.contentWindow.RTCPeerConnection
+        if (typeof Ctor !== 'function') return `its RTCPeerConnection is ${typeof Ctor}, nothing sent`
+        return describe(await gather(Ctor, server, GATHER_TIMEOUT_MS))
+      },
+    },
+    sandboxed: {
+      label: 'Sandboxed srcdoc iframe',
+      run: (server) => new Promise((resolve) => {
+        const frame = document.createElement('iframe')
+        const timer = setTimeout(() => resolve('the frame never answered'), GATHER_TIMEOUT_MS + 2000)
+        addEventListener('message', function onMessage(e) {
+          if (e.source !== frame.contentWindow) return
+          clearTimeout(timer)
+          removeEventListener('message', onMessage)
+          resolve(typeof e.data === 'string' ? e.data : describe(e.data))
+        })
+        frame.setAttribute('sandbox', 'allow-scripts')
+        frame.srcdoc = `<script>
+          if (typeof RTCPeerConnection !== 'function') parent.postMessage('its RTCPeerConnection is ' + typeof RTCPeerConnection + ', nothing sent', '*')
+          else (${gather})(RTCPeerConnection, ${JSON.stringify(server)}, ${GATHER_TIMEOUT_MS}).then((found) => parent.postMessage(found, '*'))
+        <\/script>`
+        document.body.append(frame)
+      }),
+    },
+  }
+
+  const buttons = [...document.querySelectorAll('button')]
+  const log = document.getElementById('log')
+
+  function row(test) {
+    const tr = document.createElement('tr')
+    const cells = [new Date().toISOString().slice(11, 23), test.label, 'running'].map((text) => {
+      const td = document.createElement('td')
+      td.textContent = text
+      return td
+    })
+    tr.append(...cells)
+    log.append(tr)
+    return cells[2]
+  }
+
+  for (const button of buttons) {
+    button.addEventListener('click', async () => {
+      const test = TESTS[button.id]
+      const result = row(test)
+      buttons.forEach((b) => { b.disabled = true })
+      try {
+        result.textContent = await test.run(document.getElementById('server').value.trim())
+      } catch (err) {
+        result.textContent = `threw ${err.name}: ${err.message}`
+      }
+      buttons.forEach((b) => { b.disabled = false })
+    })
+  }
+</script>
+</body>
+</html>
+
+</body></html>
