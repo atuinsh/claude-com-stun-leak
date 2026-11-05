@@ -65,19 +65,19 @@ with SSH access to this box as we have provisioned it for this purpose alone.
 
 ### Suggestion
 
-Two solutions appear to work here:
+> Run a safer, bundled, controlled javascript execution context based on
+> [QuickJS](https://bellard.org/quickjs/) which, at the engine level, removes `RTCPeerConnection`.
 
-1. Parse the artifact and ensure there are no `iframe`s within its source.
-2. Run a safer, bundled, controlled javascript execution context based on
-   [QuickJS](https://bellard.org/quickjs/) which, at the engine level, removes `RTCPeerConnection`.
+The naive solution is to parse the document for `iframe`s, but that is difficult, bug-prone, and
+potentially still insecure, as a malicious attacker could simply "un-patch" `RTCPeerConnection`, if
+lower-level, undocumented browser APIs exist at this point, or at any point in the future. Worse
+yet, someone can just `document.addElement('iframe')` and call it a day.
 
-I surmise that the first solution is difficult, bug-prone, and potentially still insecure, as a
-malicious attacker could simply "un-patch" `RTCPeerConnection`, if lower-level, undocumented
-browser APIs exist at this point, or at any point in the future.
-
-The second solution is more involved, however, appears to be total. At Atuin, we are currently
+The proposed solution is more involved, however, appears to be total. At Atuin, we are currently
 exploring the latter option for our own secure application. We would be more than happy to share
 our React components with you, as OSS under MIT if you wish to use them.
+
+### Disclosure
 
 We have not disclosed this minor-medium vulnerability and eagerly await your response. If we fail
 to hear back from you within 90 days, we will disclose the concern publicly. We're very happy to
