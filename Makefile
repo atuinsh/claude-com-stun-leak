@@ -1,4 +1,4 @@
-.PHONY: run-remote deploy build archive
+.PHONY: run-remote run-remote-nohup deploy build archive
 
 SERVER = 152.236.5.33
 REMOTE = rocky@$(SERVER)
@@ -8,6 +8,12 @@ REMOTE_VENV = ~/.csl-venv
 
 run-remote: deploy
 	ssh -t $(REMOTE) 'python3 -m venv $(REMOTE_VENV) && $(REMOTE_VENV)/bin/pip install --force-reinstall --no-deps $(REMOTE_WHEEL) && exec $(REMOTE_VENV)/bin/stun-server --host 0.0.0.0 --port 3478'
+
+run-remote-nohup: deploy
+				ssh $(REMOTE) 'python3 -m venv $(REMOTE_VENV) && \
+					$(REMOTE_VENV)/bin/pip install --force-reinstall $(REMOTE_WHEEL) && \
+					nohup $(REMOTE_VENV)/bin/stun-server --host 0.0.0.0 --port 3478 \
+						</dev/null >$(REMOTE_VENV)/stun.log 2>&1 &'
 
 deploy: build
 	scp $(WHEEL) $(REMOTE):$(REMOTE_WHEEL)
