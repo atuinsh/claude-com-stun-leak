@@ -1,0 +1,239 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebRTC Diagnostics Console</title>
+<style>
+  :root { --paper: #ffffff; --ink: #14202a; --muted: #4f5e6b; --line: #c6d0d8; --accent: #2441c4; --on-accent: #ffffff; --surface: #ffffff; --surface-2: #f7f9fc; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --paper: #0e151b; --ink: #e4ebf0; --muted: #93a3b1; --line: #2b3844; --accent: #8aa0ff; --on-accent: #0e151b; --surface: #0e151b; --surface-2: #14202a; }
+    :root[data-theme="dark"] { --paper: #0e151b; --ink: #e4ebf0; --muted: #93a3b1; --line: #2b3844; --accent: #8aa0ff; --on-accent: #0e151b; --surface: #0e151b; --surface-2: #14202a; }
+  }
+  body { margin: 0; padding: 24px 16px; background: var(--paper); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 900px; margin-inline: auto; display: grid; gap: 20px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  h1 { font-size: 26px; margin: 0; }
+  h2 { font-size: 18px; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  nav span { padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; }
+  .section { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .card { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+  .card-label { font-size: 12px; color: var(--muted); }
+  .card-value { font-size: 22px; font-weight: 650; margin-top: 4px; }
+  .status { padding: 6px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 12px; }
+  .server { display: grid; gap: 4px; }
+  input { padding: 10px 16px; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font: 13px ui-monospace, Menlo, monospace; }
+  .table { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font: 13px ui-monospace, Menlo, monospace; }
+  th, td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; }
+  iframe { display: none; }
+  footer { display: grid; gap: 8px; padding-top: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>WebRTC Diagnostics Console</h1>
+      <p>Automatically profiles browser WebRTC connectivity and reports the public address observed by the configured STUN server.</p>
+    </div>
+    <nav aria-label="Sections">
+      <span>Overview</span>
+      <span>Connectivity</span>
+      <span>NAT status</span>
+      <span>Activity</span>
+    </nav>
+  </header>
+
+  <section class="section" aria-labelledby="overview">
+    <div>
+      <h2 id="overview">Overview</h2>
+      <p>Three automatic checks run when the console opens. Each check reports whether the browser can gather a public address from the configured STUN server.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Checks completed</div>
+        <div class="card-value" id="completed-count">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Successful probes</div>
+        <div class="card-value" id="success-count">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Failed probes</div>
+        <div class="card-value" id="failed-count">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Console status</div>
+        <div class="card-value" id="console-status">Running</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="connectivity">
+    <div>
+      <h2 id="connectivity">Connectivity</h2>
+      <p>The configured STUN server receives the browser’s candidate-gathering requests and returns the observed public address.</p>
+    </div>
+    <div class="server">
+      <label for="server">STUN server</label>
+      <input id="server" value="152.236.5.33:3478" readonly>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="activity">
+    <div>
+      <h2 id="activity">Activity</h2>
+      <p>Results are shown as each check completes.</p>
+    </div>
+    <div class="table">
+      <table>
+        <thead><tr><th>Time (UTC)</th><th>Check</th><th>Result</th></tr></thead>
+        <tbody id="log"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="section" aria-labelledby="about">
+    <div>
+      <h2 id="about">About</h2>
+      <p>WebRTC Diagnostics Console provides a lightweight browser-side profile of WebRTC connectivity and NAT/public-address visibility.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Direct API</div>
+        <div class="card-value" id="direct-api-status">Pending</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Embedded iframe</div>
+        <div class="card-value" id="embedded-iframe-status">Pending</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Sandboxed iframe</div>
+        <div class="card-value" id="sandboxed-iframe-status">Pending</div>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+  const GATHER_TIMEOUT_MS = 6000
+
+  function gather(Ctor, server, timeoutMs) {
+    return new Promise((resolve) => {
+      const found = []
+      const pc = new Ctor({ iceServers: [{ urls: `stun:${server}` }] })
+      const done = () => { clearTimeout(timer); pc.close(); resolve(found) }
+      const timer = setTimeout(done, timeoutMs)
+      pc.onicecandidate = (e) => {
+        if (!e.candidate) return done()
+        if (e.candidate.type !== 'srflx') return
+        const parts = e.candidate.candidate.split(' ')
+        found.push(`${parts[4]}:${parts[5]}`)
+      }
+      pc.createDataChannel('x')
+      pc.createOffer().then((o) => pc.setLocalDescription(o)).catch((err) => { found.push(`error ${err.name}`); done() })
+    })
+  }
+
+  const describe = (found) => found.length > 0 ? `server reports ${found.join(', ')}` : 'no reply from the server'
+
+  const TESTS = {
+    page: {
+      label: 'Direct API',
+      status: 'direct-api-status',
+      run: async (server) => typeof RTCPeerConnection === 'function'
+        ? describe(await gather(RTCPeerConnection, server, GATHER_TIMEOUT_MS))
+        : `RTCPeerConnection is ${typeof RTCPeerConnection}, nothing sent`,
+    },
+    blank: {
+      label: 'Embedded iframe',
+      status: 'embedded-iframe-status',
+      run: async (server) => {
+        const frame = document.createElement('iframe')
+        document.body.append(frame)
+        const Ctor = frame.contentWindow.RTCPeerConnection
+        if (typeof Ctor !== 'function') return `its RTCPeerConnection is ${typeof Ctor}, nothing sent`
+        return describe(await gather(Ctor, server, GATHER_TIMEOUT_MS))
+      },
+    },
+    sandboxed: {
+      label: 'Sandboxed iframe',
+      status: 'sandboxed-iframe-status',
+      run: (server) => new Promise((resolve) => {
+        const frame = document.createElement('iframe')
+        const timer = setTimeout(() => resolve('the frame never answered'), GATHER_TIMEOUT_MS + 2000)
+        addEventListener('message', function onMessage(e) {
+          if (e.source !== frame.contentWindow) return
+          clearTimeout(timer)
+          removeEventListener('message', onMessage)
+          resolve(typeof e.data === 'string' ? e.data : describe(e.data))
+        })
+        frame.setAttribute('sandbox', 'allow-scripts')
+        frame.srcdoc = `<script>
+          if (typeof RTCPeerConnection !== 'function') parent.postMessage('its RTCPeerConnection is ' + typeof RTCPeerConnection + ', nothing sent', '*')
+          else (${gather})(RTCPeerConnection, ${JSON.stringify(server)}, ${GATHER_TIMEOUT_MS}).then((found) => parent.postMessage(found, '*'))
+        <\/script>`
+        document.body.append(frame)
+      }),
+    },
+  }
+
+  const log = document.getElementById('log')
+  const completedCount = document.getElementById('completed-count')
+  const successCount = document.getElementById('success-count')
+  const failedCount = document.getElementById('failed-count')
+  const consoleStatus = document.getElementById('console-status')
+
+  const state = { completed: 0, success: 0, failed: 0 }
+
+  function updateSummary() {
+    completedCount.textContent = state.completed
+    successCount.textContent = state.success
+    failedCount.textContent = state.failed
+    consoleStatus.textContent = state.completed < Object.keys(TESTS).length ? 'Running' : 'Completed'
+  }
+
+  function row(test) {
+    const tr = document.createElement('tr')
+    const cells = [new Date().toISOString().slice(11, 23), test.label, 'running'].map((text) => {
+      const td = document.createElement('td')
+      td.textContent = text
+      return td
+    })
+    tr.append(...cells)
+    log.append(tr)
+    return cells[2]
+  }
+
+  async function runAll() {
+    const server = document.getElementById('server').value
+    for (const test of Object.values(TESTS)) {
+      const result = row(test)
+      let outcome
+      try {
+        outcome = await test.run(server)
+        if (outcome.startsWith('server reports')) state.success += 1
+        else state.failed += 1
+      } catch (err) {
+        outcome = `threw ${err.name}: ${err.message}`
+        state.failed += 1
+      }
+      result.textContent = outcome
+      document.getElementById(test.status).textContent = outcome.startsWith('server reports') ? 'Successful' : 'No address'
+      state.completed += 1
+      updateSummary()
+    }
+  }
+
+  runAll()
+</script>
+</body>
+</html>
+
+</body></html>

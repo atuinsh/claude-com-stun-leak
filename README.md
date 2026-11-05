@@ -44,7 +44,9 @@ following files are relevant:
 - `stun_server.py` includes a minimal vibe-coded STUN server, which the attacker hosts on their
   server.
 - `claude-ai-artifacts-export.html` includes the artifact (mentioned last) exported via the Export
-  UI in Claude Artifacts.
+  UI in Claude Artifacts. **Open responsibly.**
+- `claude-ai-artifacts-passive.html` is equivalent to `claude-ai-artifacts-export.html`, except
+  that it does not need user interaction. **Open responsibly.**
 - **Open responsibly** `https://claude.ai/artifact/4HWQGMvp7Ezr2JihVyYZau` is the sharable
   artifact which performs the STUN-based IP leak. It has a text-box which enables you to plug in
   your own IP. Clicking one of the three buttons will:
@@ -52,9 +54,12 @@ following files are relevant:
     * Run the `RTCPeerConnection` with the constructor taken from a dynamically created `iframe`,
       inside the browser's context.
     * Run the `RTCPeerConnection` within a dynamically created `iframe`.
+- I failed to convince any of your models to render an artifact without any user interaction,
+  however, I suspect that a malicious actor with more patience (and certainly more convincing
+  prompts than my own) would succeed in convincing Haiku.
 
-  In the last two cases, the IP of the victim will be sent to the server. The `stun_server.py` will
-  echo back the IP address, for convenience.
+In the last four cases, the IP of the victim will be sent to the server. The `stun_server.py` will
+echo back the IP address, for convenience.
 
 Additional files, which are helpful to reproduce the issue:
 
