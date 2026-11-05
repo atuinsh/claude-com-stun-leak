@@ -7,8 +7,8 @@ all users visiting the artifact.
 
 ### Attack description
 
-1. The attacker hosts a [ICE](https://en.wikipedia.org/wiki/Interactive_Connectivity_Establishment)
-   server on a machine they control.
+1. The attacker hosts a [STUN](https://en.wikipedia.org/wiki/STUN) server on a machine they
+   control.
 2. The attacker sets up a malicious Claude.ai artifact which embeds an `iframe` such that the
    `iframe` performs an
    [`RTCPeerConnection`](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection) to the
@@ -44,7 +44,7 @@ following files are relevant:
 - `claude-ai-artifacts-export.html` includes the artifact (mentioned last) exported via the Export
   UI in Claude Artifacts.
 - **Open responsibly** `https://claude.ai/artifact/4HWQGMvp7Ezr2JihVyYZau` is the sharable
-  artifact which performs the ICE-based IP leak. It has a text-box which enables you to plug in
+  artifact which performs the STUN-based IP leak. It has a text-box which enables you to plug in
   your own IP. Clicking one of the three buttons will:
     * Run the `RTCPeerConnection` negotiation from the browser's context.
     * Run the `RTCPeerConnection` with the constructor taken from a dynamically created `iframe`,
@@ -64,8 +64,8 @@ To tweak this example you should tweak the following values:
 
 | Value | Description |
 |-------|-------------|
-| `probe.html:stunLink` | The IP address of the ICE server. |
-| `Makefile:SERVER` | The IP address of the ICE server. |
+| `probe.html:stunLink` | The IP address of the STUN server. |
+| `Makefile:SERVER` | The IP address of the STUN server. |
 
 The values are pre-programmed with a Latitude VPS we have control over. We are happy to provide you
 with SSH access to this box as we have provisioned it for this purpose alone.
